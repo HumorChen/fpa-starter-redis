@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  cn.freeprogramming.config.FastJson2JsonRedisSerializer,\
+  cn.freeprogramming.config.AnnotationCacheKeyGenerator,\
+  cn.freeprogramming.config.RedisConfig
