@@ -1,5 +1,6 @@
 package cn.freeprogramming.config;
 
+import cn.freeprogramming.dao.RedisDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
@@ -28,7 +29,7 @@ public class RedisConfig {
      * @param factory
      * @return
      */
-    @Bean
+    /*@Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {
         RedisSerializer<String> redisSerializer = new StringRedisSerializer();
 
@@ -40,7 +41,7 @@ public class RedisConfig {
                 .cacheDefaults(config)
                 .build();
         return cacheManager;
-    }
+    }*/
 
     /**
      * 手动注入使用的RedisTemplate
@@ -53,6 +54,8 @@ public class RedisConfig {
         template.setConnectionFactory(connectionFactory);
         template.setValueSerializer(fastJson2JsonRedisSerializer);
         template.afterPropertiesSet();
+        //给RedisDao设置上
+        RedisDao.setRedisTemplate(template);
         return template;
     }
 
