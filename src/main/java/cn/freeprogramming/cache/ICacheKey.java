@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class ICacheKey {
     public static final String SEPARATOR = ":";
+    public static final Integer DEFAULT_EXPIRE = -1;
     /**
      * 前缀
      */
@@ -18,7 +19,7 @@ public abstract class ICacheKey {
     /**
      * 过期时间
      */
-    private Integer expire = -1;
+    public Integer expire = DEFAULT_EXPIRE;
     /**
      * 过期时间单位(默认毫秒)
      */

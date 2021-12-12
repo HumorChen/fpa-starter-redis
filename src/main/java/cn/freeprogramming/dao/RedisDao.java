@@ -3,9 +3,9 @@ package cn.freeprogramming.dao;
 import cn.freeprogramming.cache.ICacheKey;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Redis操作封装类
@@ -46,6 +46,79 @@ public class RedisDao {
     }
 
     /**
+     * 删除Key
+     * @param cacheKey
+     */
+    public static void del(ICacheKey cacheKey){
+        redisTemplate.delete(cacheKey.getKey());
+    }
+
+    /**
+     * 删除一批
+     * @param cacheKeys
+     * @return
+     */
+    public static Long del(Collection<ICacheKey> cacheKeys){
+        return redisTemplate.delete(cacheKeys.stream().map(cacheKey -> cacheKey.getKey()).collect(Collectors.toList()));
+    }
+
+    /**
+     * 批量删除以prefix开头的所有键
+     * @param prefix
+     * @return
+     */
+    public static Long delStartWith(String prefix){
+        Set<String> keys = keysStartWith(prefix);
+        if (keys != null && keys.size() > 0){
+            return redisTemplate.delete(keys);
+        }
+        return 0L;
+    }
+
+    /**
+     * 对key自增1
+     * @param cacheKey
+     * @return
+     */
+    public static Long incr(ICacheKey cacheKey){
+        return incr(cacheKey,1L);
+    }
+
+    /**
+     * 对Key自增delta（正负都可以的），也可以设置过期时间
+     * @param cacheKey
+     * @param delta
+     * @return
+     */
+    public static Long incr(ICacheKey cacheKey,Long delta){
+        String key = cacheKey.getKey();
+        Long ret = redisTemplate.opsForValue().increment(key,delta);
+        if (cacheKey.getExpire() > 0){
+            redisTemplate.expire(key,cacheKey.getExpire(),cacheKey.getExpireTimeUnit());
+        }
+        return ret;
+    }
+
+    /**
+     * 主动修改过期时间
+     * @param cacheKey
+     * @param expire
+     * @param timeUnit
+     * @return
+     */
+    public static Boolean expire(ICacheKey cacheKey, Integer expire, TimeUnit timeUnit){
+        return redisTemplate.expire(cacheKey.getKey(),expire,timeUnit);
+    }
+
+    /**
+     * 获取过期时间还有多少（以CacheKey的单位换算）
+     * @param cacheKey
+     * @return
+     */
+    public static Long getExpire(ICacheKey cacheKey){
+        return redisTemplate.getExpire(cacheKey.getKey(),cacheKey.getExpireTimeUnit());
+    }
+    /**
      * 对key设置值
      * @param cacheKey
      * @param value
@@ -56,6 +129,22 @@ public class RedisDao {
         }else {
             redisTemplate.opsForValue().set(cacheKey.getKey(),value);
         }
+    }
+
+    /**
+     * 批量设置
+     * @param map
+     */
+    public static void set(Map<ICacheKey,Object> map){
+        Map<String,Object> paramMap = new HashMap<>(map.size());
+        map.entrySet().stream().forEach(entry->paramMap.put(entry.getKey().getKey(),entry.getValue()));
+        redisTemplate.opsForValue().multiSet(paramMap);
+        //redisTemPlate不支持一次性设置expire
+        map.keySet().forEach(cacheKey ->{
+            if (cacheKey.getExpire() > 0){
+                redisTemplate.expire(cacheKey.getKey(),cacheKey.getExpire(),cacheKey.getExpireTimeUnit());
+            }
+        });
     }
 
     /**
@@ -78,6 +167,20 @@ public class RedisDao {
         return (cls)get(cacheKey);
     }
 
+    /**
+     * 批量获取
+     * @param keySet
+     * @param cls
+     * @param <cls>
+     * @return
+     */
+    public static <cls> List mget(Set<ICacheKey> keySet,Class cls){
+        if (keySet != null && keySet.size() > 0){
+            List<cls> list = redisTemplate.opsForValue().multiGet(keySet);
+            return list;
+        }
+        return new ArrayList<cls>(0);
+    }
     /**
      * 列表从左边push
      * @param cacheKey

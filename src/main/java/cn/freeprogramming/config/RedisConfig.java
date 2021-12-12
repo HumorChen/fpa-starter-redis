@@ -14,6 +14,8 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import javax.annotation.PostConstruct;
+
 /**
  * Redis配置类
  * @author humorchen
@@ -23,6 +25,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
     @Autowired
     private FastJson2JsonRedisSerializer fastJson2JsonRedisSerializer;
+    @Autowired
+    private RedisConnectionFactory connectionFactory;
 
     /**
      * 方法注解缓存
@@ -44,19 +48,16 @@ public class RedisConfig {
     }*/
 
     /**
-     * 手动注入使用的RedisTemplate
-     * @param connectionFactory
-     * @return
+     * 初始化RedisDao
      */
-    @Bean
-    public RedisTemplate<String , Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    @PostConstruct
+    public void redisDaoInit() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setValueSerializer(fastJson2JsonRedisSerializer);
         template.afterPropertiesSet();
         //给RedisDao设置上
         RedisDao.setRedisTemplate(template);
-        return template;
     }
 
 }
